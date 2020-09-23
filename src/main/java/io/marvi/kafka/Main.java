@@ -6,10 +6,19 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.IntStream;
 
 @Command(name = "kafka-test", mixinStandardHelpOptions = true, version = "kafka-test 1.0",
         description = "Simple Apache Kafka test suite with a producer and consumer")
 public class Main implements Callable<Integer> {
+
+    private static final AtomicBoolean shutdownRequested = new AtomicBoolean(false);
+
+    @Option(names = {"-w", "--workers"}, description = "Number of producer/consumer worker threads")
+    private Integer workers = 2;
 
     @Option(names = {"-r", "--role"}, required = true, description = "producer or consumer")
     private String role = "producer";
@@ -26,7 +35,10 @@ public class Main implements Callable<Integer> {
     }
 
     public Integer call() {
+        ExecutorService service = Executors.newFixedThreadPool(workers);
         System.out.println("Hello " + role);
+        IntStream.range(0, workers)
+                .forEach(i -> service.execute());
         return 1;
     }
 
